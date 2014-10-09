@@ -4,6 +4,7 @@
 import sys
 import numpy
 import ConfigParser
+import ImgProcessing
 try:
     import pygtk
     pygtk.require("2.0")
@@ -82,6 +83,7 @@ class LiveSJ(gtk.Window):
     def __init__(self):
         self.SnapshotMessage=0
         self.ImgSource=False
+        self.Source=False
         self.ImgPath=""
         self.cfg = ConfigParser.ConfigParser()
         self.cfg.read("LiveSJ.ini")
@@ -115,7 +117,7 @@ class LiveSJ(gtk.Window):
 
         self.toolbar_item03 = gtk.ToolButton("Open")
         self.toolbar_item03.set_stock_id(gtk.STOCK_OPEN)
-        self.toolbar_item03.connect("clicked", self.SJLiveOpen)
+        self.toolbar_item03.connect("clicked", self.SJLivePlay)
         self.toolbar.insert(self.toolbar_item03,2)
 
         self.toolbar_item04 = gtk.ToolButton("Stop")
@@ -320,7 +322,7 @@ class LiveSJ(gtk.Window):
 
     def KameraSettingChanged(self,widget):
         print "Změna v 'KameraSetting':"
-
+        print ImgProcessing.array_from_source("source")
         #print "ziskano1: ", self.cam.get() 
         if widget is self.cbKamera:
             self.cam.set(6, self.sbFPS.get_value())
@@ -388,58 +390,84 @@ class LiveSJ(gtk.Window):
         print "SJLivePlay"
         self.play = True
 
-
         print "Starting "
 
-        self.cam.set(15, 0.1)
-        s, img = self.cam.read()
-        cv2.imwrite("test.png", img)
-        self.image.set_from_file("test.png")
-        self.show_all()
-        Playcfg = ConfigParser.ConfigParser()
-        Playcfg.read("LiveSJ.ini")
-
+        #self.cam.set(15, 0.1)
+        #s, img = self.cam.read()
+        #cv2.imwrite("test.png", img)
+        #self.image.set_from_file("test.png")
+        #self.show_all()
+        #Playcfg = ConfigParser.ConfigParser()
+        #Playcfg.read("LiveSJ.ini")
 
         while self.play:
+            Playcfg = ConfigParser.ConfigParser()
             Playcfg.read("LiveSJ.ini")
-            s, img = self.cam.read()
-            img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
 
-
-            if self.SnapshotMessage is 2:
-                print "Ulozit cisty snimek"
-                #ts = time.time()
-                #hist = MakeHist(img, 200, 200, None)
-
-                im = Image.fromarray(img)
-                im.save("testb.png")
-                self.SnapshotMessage = 0
-
-
-            if int(Playcfg.get("MASK","hist")) is 0:
-                a = numpy.asarray(img)
+            if widget is self.toolbar_item03:
+                print "kliknuto open"
+                obr = ImgProcessing.array_from_source(self.getfile())
             else:
-                a = numpy.asarray(MakeHist(img,100,200,int(Playcfg.get("MASK","hist")),None))
+                print "je kamera cislo:", int(Playcfg.get("CAMERA","cam"))
+                obr = ImgProcessing.array_from_source( int(Playcfg.get("CAMERA","cam")) )
 
+            print "typ qe ",type(obr)
+            print obr
+            plt.imshow(obr) #Needs to be in row,col order
+            plt.savefig("aaa.png")
+            scipy.misc.imsave('outfile.jpg', obr)
+            im = Image.fromarray(obr)
+            im.save('test.png')
 
+            self.image.set_from_pixbuf( gtk.gdk.pixbuf_new_from_array(obr, gtk.gdk.COLORSPACE_RGB, 8) )
 
-            if int(Playcfg.get("MASK","type")) is 0:
-                pass
-            elif int(Playcfg.get("MASK","type")) is 1:
-                cv2.circle(a, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+2,(150,150,150),3, cv2.CV_AA)    # cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]])
-            elif int(Playcfg.get("MASK","type")) is 2:
-                cv2.circle(a, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+1,(150,150,150),1, cv2.CV_AA)    # cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]])
-                cv2.circle(a, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+5,(150,150,150),2, cv2.CV_AA)    # cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]])   
-            self.image.set_from_pixbuf( gtk.gdk.pixbuf_new_from_array(a, gtk.gdk.COLORSPACE_RGB, 8) )
-            if self.SnapshotMessage is 1:
-                print "Ulozit Pixbuf snimek"
-                im = Image.fromarray(a)
-                im.save('test.png')
-                self.SnapshotMessage = 0
 
             self.show_all()
             while gtk.events_pending():
+
                 gtk.main_iteration()
+
+
+    #    while self.play:
+    #        Playcfg.read("LiveSJ.ini")
+    #       s, img = self.cam.read()
+    #        img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+    #
+    #
+    #        if self.SnapshotMessage is 2:
+    #           print "Ulozit cisty snimek"
+    #            #ts = time.time()
+    #               #hist = MakeHist(img, 200, 200, None)
+    #
+    #            im = Image.fromarray(img)
+    #           im.save("testb.png")
+    #            self.SnapshotMessage = 0#
+    #
+
+    #        if int(Playcfg.get("MASK","hist")) is 0:
+    #            a = numpy.asarray(img)
+    #        else:
+    #            a = numpy.asarray(MakeHist(img,100,200,int(Playcfg.get("MASK","hist")),None))
+    #
+    #
+
+    #        if int(Playcfg.get("MASK","type")) is 0:
+    #            pass
+    #        elif int(Playcfg.get("MASK","type")) is 1:
+    #            cv2.circle(a, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+2,(150,150,150),3, cv2.CV_AA)    # cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]])
+    #        elif int(Playcfg.get("MASK","type")) is 2:
+    #            cv2.circle(a, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+1,(150,150,150),1, cv2.CV_AA)    # cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]])
+    #            cv2.circle(a, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+5,(150,150,150),2, cv2.CV_AA)    # cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]])   
+    #        self.image.set_from_pixbuf( gtk.gdk.pixbuf_new_from_array(a, gtk.gdk.COLORSPACE_RGB, 8) )
+    #        if self.SnapshotMessage is 1:
+    #            print "Ulozit Pixbuf snimek"
+    #            im = Image.fromarray(a)
+    #            im.save('test.png')
+    #            self.SnapshotMessage = 0
+
+    #        self.show_all()
+    #        while gtk.events_pending():
+    #            gtk.main_iteration()
         print "Exiting "
 
     def getfile(self):
