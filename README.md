@@ -1,4 +1,0 @@
-SolarForecast
-=============
-
-Solar forecast
