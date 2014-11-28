@@ -83,7 +83,7 @@ class LiveSJ(gtk.Window):
         self.SnapshotMessage=0
         self.ImgSource=False
         self.ImgPath=""
-        self.cfg = ConfigParser.ConfigParser()
+        self.cfg = ConfigParser.RawConfigParser()
         self.cfg.read("LiveSJ.ini")
         self.cam = cv2.VideoCapture(0)
         gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
@@ -256,7 +256,7 @@ class LiveSJ(gtk.Window):
 
         adjX = gtk.Adjustment(1, 1, self.cam.get(3), 1, 1, 0)
         adjY = gtk.Adjustment(1, 1, self.cam.get(4), 1, 1, 0)
-        adjR = gtk.Adjustment(1, 1, 120, 1, 1, 0)
+        adjR = gtk.Adjustment(1, 1, self.cam.get(3), 1, 1, 0)
 
         self.sbMaskX = gtk.SpinButton(adjX,1,0)
         self.sbMaskY = gtk.SpinButton(adjY,1,0)
@@ -285,7 +285,6 @@ class LiveSJ(gtk.Window):
         frMaska.add(tabMaska)
         kostra.pack_start(frMaska, False, False, 10)
 
-
         labelHist = gtk.Label("Zobrazit Histogram:")
         self.cbHist = gtk.combo_box_new_text()
         self.cbHist.append_text("Vypnuto")
@@ -298,6 +297,15 @@ class LiveSJ(gtk.Window):
         self.cbHist.connect("changed", self.KameraSettingChanged)
         tabMaska.attach(labelHist,0,1,2,3)
         tabMaska.attach(self.cbHist,1,2,2,3)
+
+        self.cbScale = gtk.HScale()
+        self.cbScale.set_range(0, 100)
+        self.cbScale.set_increments(1, 10)
+        self.cbScale.set_digits(0)
+        self.cbScale.set_size_request(160, 35)
+        self.cbScale.set_value( int(self.cfg.get("MASK","scaleOver")) )
+        self.cbScale.connect("value-changed", self.KameraSettingChanged)
+        tabMaska.attach( self.cbScale,0,2,3,4)
 
         labelPlotFlare = gtk.Label("Vykreslení erupcí:")
         self.cbPlotFlare = gtk.combo_box_new_text()
@@ -347,6 +355,7 @@ class LiveSJ(gtk.Window):
         self.cfg.set('MASK','maskR',int( self.sbMaskR.get_value()) )
         self.cfg.set('MASK','maskX',int( self.sbMaskX.get_value()) )
         self.cfg.set('MASK','maskY',int( self.sbMaskY.get_value()) )
+        self.cfg.set('MASK','scaleOver',int( self.cbScale.get_value()) )
 
         if self.ImgSource:
             self.SJLiveOpen(widget)
@@ -396,7 +405,7 @@ class LiveSJ(gtk.Window):
         cv2.imwrite("test.png", img)
         self.image.set_from_file("test.png")
         self.show_all()
-        Playcfg = ConfigParser.ConfigParser()
+        Playcfg = ConfigParser.RawConfigParser()
         Playcfg.read("LiveSJ.ini")
 
 
@@ -408,8 +417,6 @@ class LiveSJ(gtk.Window):
 
             if self.SnapshotMessage is 2:
                 print "Ulozit cisty snimek"
-                #ts = time.time()
-                #hist = MakeHist(img, 200, 200, None)
 
                 im = Image.fromarray(img)
                 im.save("testb.png")
@@ -419,9 +426,15 @@ class LiveSJ(gtk.Window):
             if int(Playcfg.get("MASK","hist")) is 0:
                 a = numpy.asarray(img)
             else:
-                a = numpy.asarray(MakeHist(img,100,200,int(Playcfg.get("MASK","hist")),None))
+                height, width, depth = img.shape
+                mask_image = cv2.imread('mask.png',0)
+                mask_image = cv2.resize(mask_image , (width,height))
+                cv2.circle(mask_image, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+1,(255,255,255),-1)
+                cv2.imwrite("makout.png",mask_image)
+                a = numpy.asarray(MakeHist(img,100,200,int(Playcfg.get("MASK","hist")),mask_image))
 
 
+            ret,a = cv2.threshold(a,self.cfg.getint("MASK","scaleOver")*2,255,cv2.THRESH_TOZERO)
 
             if int(Playcfg.get("MASK","type")) is 0:
                 pass
@@ -466,14 +479,37 @@ class LiveSJ(gtk.Window):
 
             self.toolbar_item03.set_stock_id(gtk.STOCK_CLOSE)
 
-            Playcfg = ConfigParser.ConfigParser()
+            height, width, depth = img.shape
+            print  height, width
+
+            #self.sbMaskX.set_range( 1, width )
+            #self.sbMaskY.set_range( 1, height)
+            #self.sbMaskR.set_range( 1, width )
+
+            Playcfg = ConfigParser.RawConfigParser()
             Playcfg.read("LiveSJ.ini")
+
+
+            if self.SnapshotMessage is 2:
+                print "Ulozit cisty snimek"
+
+                im = Image.fromarray(img)
+                im.save("testb.png")
+                self.SnapshotMessage = 0
 
 
             if int(Playcfg.get("MASK","hist")) is 0:
                 a = numpy.asarray(img)
             else:
-                a = numpy.asarray(MakeHist(img,100,200,int(Playcfg.get("MASK","hist")),None))
+                height, width, depth = img.shape
+                mask_image = cv2.imread('mask.png',0)
+                mask_image = cv2.resize(mask_image , (width,height))
+                cv2.circle(mask_image, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+1,(255,255,255),-1)
+                cv2.imwrite("makout.png",mask_image)
+                a = numpy.asarray(MakeHist(img,100,200,int(Playcfg.get("MASK","hist")),mask_image))
+
+
+            ret,a = cv2.threshold(a,self.cfg.getint("MASK","scaleOver")*2,255,cv2.THRESH_TOZERO)
 
             if int(Playcfg.get("MASK","type")) is 0:
                 pass
@@ -483,6 +519,11 @@ class LiveSJ(gtk.Window):
                 cv2.circle(a, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+1,(150,150,150),1, cv2.CV_AA)    # cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]])
                 cv2.circle(a, ( int(Playcfg.get("MASK","maskx")),int(Playcfg.get("MASK","masky")) ), int(Playcfg.get("MASK","maskr"))+5,(150,150,150),2, cv2.CV_AA)    # cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]])   
             self.image.set_from_pixbuf( gtk.gdk.pixbuf_new_from_array(a, gtk.gdk.COLORSPACE_RGB, 8) )
+            if self.SnapshotMessage is 1:
+                print "Ulozit Pixbuf snimek"
+                im = Image.fromarray(a)
+                im.save('test.png')
+                self.SnapshotMessage = 0
 
             self.show_all()
 
@@ -490,17 +531,19 @@ class LiveSJ(gtk.Window):
 
             self.toolbar_item03.set_stock_id(gtk.STOCK_CLOSE)
 
-            Playcfg = ConfigParser.ConfigParser()
+            Playcfg = ConfigParser.RawConfigParser()
             Playcfg.read("LiveSJ.ini")
 
             img = cv2.imread(self.ImgPath)
             img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
 
-
             if int(Playcfg.get("MASK","hist")) is 0:
                 a = numpy.asarray(img)
             else:
                 a = numpy.asarray(MakeHist(img,100,200,int(Playcfg.get("MASK","hist")),None))
+
+            ret,a = cv2.threshold(a,self.cfg.getint("MASK","scaleOver")*2,255,cv2.THRESH_TOZERO)
+
 
             if int(Playcfg.get("MASK","type")) is 0:
                 pass
@@ -514,7 +557,8 @@ class LiveSJ(gtk.Window):
             self.show_all()
 
         elif self.ImgSource and widget is self.toolbar_item03:
-            print "ZAVRI"
+            self.ImgSource = False
+            self.toolbar_item03.connect("clicked", self.SJLiveOpen)
 
 
     def info(self, widget, text):

@@ -14,7 +14,7 @@ class prvni_okno(gtk.Window):
 
     def __init__(self):
 
-    	gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
+        gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
         #self.okno = gtk.Window()
         self.tlacitko = gtk.Button("self")
         self.set_title("Okno 1")
