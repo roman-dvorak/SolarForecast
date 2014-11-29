@@ -5,22 +5,25 @@ from myFunct import *
 ###########################################
 ###########################################
 
-BalmerKontinuum = (35110, 36303)
-BalmerHrana     = (36465, 36473)
-CaK             = (39313, 39363)
-CaH             = (39313, 39363)
-C391            = (39106, 39153)
-KratkeVD        = (35500, 35998)
-DlouheVD        = (42003, 42499)
-CelkovaInt      = (35500, 42499)
-Gband           = (00000, 00000)
+BalmerKontinuum = (35110, 36303, "Balmer Kontinuum")
+BalmerHrana     = (36465, 36473, "Balmer Hrana")
+CaK             = (39313, 39363, "CaK")
+CaH             = (39313, 39363, "CaH")
+C391            = (39106, 39153, "C391")
+KratkeVD        = (35500, 35998, "Kratke VD")
+DlouheVD        = (42003, 42499, "Dlouhe VD")
+CelkovaInt      = (35500, 42499, "Celkova Intenzita")
+#Gband           = (65620, 65630, "G-band") je mimo rozsah spektrometru
 
-fmin, fmax = BalmerHrana
-f2min, f2max = CelkovaInt
+Moje            = (00000, 00000, "moje vlastni definice")
+
+fmin, fmax, jmeno = BalmerHrana
+f2min, f2max, jmeno2 = CaH
+jmeno3= jmeno+"/"+jmeno2
 
 
-souborrange = xrange(000,len(dirList))
-#souborrange = xrange(1500,2000)
+souborrange = xrange(0000,len(dirList))
+#souborrange = xrange(1500,3000)
 
 
 ###########################################
@@ -32,7 +35,7 @@ b=np.array([0])
 c=np.array([0])
 i=0
 
-hdulist = pyfits.open(path_hessi+'hsi_20140611_085140_005.fits')
+hdulist = pyfits.open(path_hessi+'hsi_20140611_085140_005.fits', overwrite=True)
 tbdata = hdulist[2].data
 print len(tbdata)
 #for x in xrange(1,len(tbdata)):
@@ -58,35 +61,12 @@ print len(tbdata)
 hsi_lightcurve = lightcurve.RHESSISummaryLightCurve.create('2014-06-11 08:45','2014-06-11 09:10')
 
 
-plt.figure(5)
-plt.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['12 - 25 keV'],color='cyan',label='12-25 keV')
-plt.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['25 - 50 keV'],color='purple',label='25-50 keV')
-plt.ylabel('RHESSI summary counts')
-plt.legend()
+#plt.figure(5)
+#plt.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['12 - 25 keV'],color='cyan',label='12-25 keV')
+#plt.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['25 - 50 keV'],color='purple',label='25-50 keV')
+#plt.ylabel('RHESSI summary counts')
+#plt.legend()
 #plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -140,19 +120,19 @@ for numsoubor in souborrange:
                 data = data - Dark[x]
                 data = data/(Flat[x]-Dark[x])
                 tmp = tmp+data
-#
-#datetime.date(year=1971, month=12, day=31)
-#       
-        print newname, "--", int(float(newname[9:11]))
+
         seconds=(int(float(newname[9:11]))+0)*60*60 + (int(float(newname[11:13]))+0)*60 +int(float(newname[13:15]))
         m, s = divmod(seconds, 60)
         h, m = divmod(m, 60)
         ms = 0
+
         if s==lastSec:
-            ms = secPosition*9
-            secPosition=1
-        lastSec=s
-        secPosition =+1
+            ms = secPosition*80
+            secPosition = secPosition + 1
+        else:
+            secPosition=0
+        lastSec = s
+        print h,m,s,ms
         xarr = np.append(xarr, datetime(year=int(float(newname[:4])), month=int(float(newname[4:6])), day=int(float(newname[6:8])), hour=h, minute=m, second=s, microsecond=ms*1000))
         n=np.append(n, tmp/(imax-imin) )
         if f2:
@@ -174,34 +154,43 @@ for numsoubor in souborrange:
 
 x = np.arange(0, n.size)
 
-#dft = pd.DataFrame(np.random.randn(100000,1),columns=['A'],index=pd.date_range('20130101',periods=100000,freq='T'))
-#xdate = dft
-#print xdate
+
+sn = smooth(n,20)
+sn2 = smooth(n2,20)
+sn3 = smooth(n3,20)
 
 
-dates = mpl.dates.date2num(xarr)
-plt.figure(0)
-plt.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['12 - 25 keV'],linewidth=0.5, color='r')
-plt.plot(xarr, n*100,linewidth=0.5, color='b')
-plt.gcf().autofmt_xdate()
-plt.savefig("out.png")
+fig, ax0 = plt.subplots()
 
-plt.figure(6)
-fig, ax1 = plt.subplots()
-ax1.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['12 - 25 keV'],linewidth=0.5, color='r')
-ax2 = ax1.twinx()
-ax2.plot(xarr, n,linewidth=0.5, color='b')
-#plt.show()
+p0, = ax0.plot(xarr,sn3,color="black", linewidth=1, alpha=0.75, label=jmeno3)
+
+ax1 = ax0.twinx()
+p1, = ax1.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['12 - 25 keV'],linewidth=4, alpha=0.75, color='r',label='12-25 keV')
+ax1.set_ylabel('12-25 keV', color="r")
+
+ax2 = ax0.twinx()
+p2, = ax2.plot(xarr, sn ,linewidth=1, alpha=0.75, color='b', label=jmeno)
+p3, = ax2.plot(xarr, sn2 ,linewidth=1, alpha=0.75, color='g', label=jmeno2)
+
+lines = [p0, p1, p2, p3]
+ax0.legend(lines, [l.get_label() for l in lines])
+
+
+
 
 if f2:
-    plt.figure(1)
-    plt.plot(xarr, n2*100,linewidth=0.5, color='b' )
-    plt.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['12 - 25 keV'],color='cyan',label='12-25 keV')
-    plt.figure(2)
-    plt.plot(xarr, n3,linewidth=0.5, color='b' )
-    plt.figure(3)
+    #plt.figure(10)
+    #plt.plot(xarr, n2,linewidth=0.5, color='b', label=jmeno2)
+    #plt.plot(hsi_lightcurve.data.index,hsi_lightcurve.data['12 - 25 keV'],color='cyan',label='12-25 keV')
+    #plt.legend()
+
+    #plt.figure(3)
+    #plt.plot(xarr, n3,linewidth=0.5, color='b' )
+
+    plt.figure()
     plt.hist(n3, 50, normed=1, facecolor='green', alpha=0.75)
-    plt.figure(4)
+
+    plt.figure()
     plt.plot(n, n2,'.',linewidth=0.5, color='b', )
 plt.show()
 plt.close()

@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import division
 import os
 import datetime
 import time
@@ -14,6 +15,10 @@ from   array import array
 import subprocess
 import Image
 
+from pylab import plot, ylim, xlim, show, xlabel, ylabel, grid
+from numpy import linspace, loadtxt, ones, convolve
+import numpy as numpy
+
 import pyfits
 
 import sunpy
@@ -21,6 +26,10 @@ from   sunpy import lightcurve
 
 import pandas
 import pandas as pd
+
+import scipy
+import scipy as sp
+from scipy.interpolate import interp1d
 
 
   
@@ -159,16 +168,22 @@ def parser(arrA, arrB, path, soubor):
     #
     f=open(path+soubor)
     lines=f.readlines()
-    minutes = int(lines[2][17:19])*60 + int(lines[2][20:22]) + 4*60 + 30 # cas spekter offsetu od UTC
-    newname = "" + lines[2][30:34] + monthToNum(lines[2][10:13]) + lines[2][14:16] + "_" + str('%02d'%int(minutes/60)) + str('%02d' % int(minutes-(minutes/60)*60)) + lines[2][23:25] + "_" + soubor
-    #              ^ rok             ^ cislo mesice                ^ cislo dnu v mesici    ^ hodina                      ^ minuta                                     ^sekunda                ^ puvodni jmeno
+    #minutes = int(lines[2][17:19])*60 + int(lines[2][20:22]) + 4*60 + 30 # cas spekter offsetu od UTC
+
+
+    seconds=(int(float(lines[2][17:19]))+4)*60*60 + (int(float(lines[2][20:22]))+30)*60 +int(float(lines[2][23:25]))
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+
+    newname = "" + lines[2][30:34] + monthToNum(lines[2][10:13]) + lines[2][14:16] + "_" + str('%02d'% h) + str('%02d' % m) + str('%02d' % s) + "_" + soubor
+    #              ^ rok             ^ cislo mesice                ^ cislo dnu v mesici    ^ hodina         ^ minuta          ^sekunda                ^ puvodni jmeno
     for i in range(18,3665):
         data = lines[i]
         arrA.append(float( data[:data.find("\t")] )*10)
         arrB.append(float( data[data.find("\t")+1:] ))
     arrA[0]=0
     arrB[0]=0
-    return newname
+    return str(newname)#, lines[2], str('%02d'% h)
 
 def erse (arrA, arrB):
     #
@@ -222,6 +237,8 @@ def takeClosest(myList, myNumber):
     #   out 'ext'    - index v 'myList'
     #   out 'closest'- hodnota nejblizsi 'myNumber hodnoty'
     #
+    if myNumber < 34946 or myNumber > 48548:
+        raise Exception("Hledana vlnova delka je mimo rozsah." + "Pouzijte rozsah 3494.6 az 4854.8.")
     vedle = 100
     closest = 100
     for i in xrange(1, len(myList)):
@@ -232,8 +249,21 @@ def takeClosest(myList, myNumber):
     return int(ext), closest
 
 
-
-
-
 parser(arr, Flat, "/home/roman/Dokumenty/Projects/Astronomy/Spectrum/scripts/", "FlatSpectrum.TXT")
 parser(arr, Dark, "/home/roman/Dokumenty/Projects/Astronomy/Spectrum/scripts/", 'DarkSpectrum.TXT')
+
+
+
+def smooth(inarr, lenght):
+    #
+    #   Koluzavy prumer
+    #
+    inarr=np.array(inarr)
+    outarr=np.array(inarr)
+    for i in xrange(int(lenght/2),int(inarr.shape[0]-lenght)):
+        suma=0
+        for xa in xrange(int(-lenght/2),int(lenght/2)):
+            #print i, xa, inarr[i]
+            suma=suma+inarr[i+xa]
+        outarr[i]=suma/lenght
+    return outarr
