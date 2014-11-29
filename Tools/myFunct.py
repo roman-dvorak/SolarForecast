@@ -4,15 +4,25 @@ import datetime
 import time
 import ftplib
 import ConfigParser
-from datetime import datetime
+from   datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import operator
-from scipy.interpolate import interp1d
-from array import array
+from   scipy.interpolate import interp1d
+from   array import array
 import subprocess
 import Image
+
 import pyfits
+
+import sunpy
+from   sunpy import lightcurve
+
+import pandas
+import pandas as pd
+
+
   
 
 
@@ -29,6 +39,7 @@ arr  = [0.0]
 path="/home/roman/Dokumenty/Projects/Astronomy/Spectrum/2014/140611/spectra/AR12087/0843/"
 #path="/media/roman/eHDD/Dokumenty/Projects/Astronomy/Spectrum/140611/spectra/AR12087/0807"
 path_sj="/home/roman/Dokumenty/Projects/Astronomy/Spectrum/2014/140611/sj/new/"
+path_hessi="/home/roman/Dokumenty/Projects/Astronomy/Spectrum/data/"
 dirList = os.listdir(path)
 dirList.sort()
 dirListSJ = os.listdir(path_sj)
@@ -149,14 +160,15 @@ def parser(arrA, arrB, path, soubor):
     f=open(path+soubor)
     lines=f.readlines()
     minutes = int(lines[2][17:19])*60 + int(lines[2][20:22]) + 4*60 + 30 # cas spekter offsetu od UTC
-    newname = "" + lines[2][30:34] + monthToNum(lines[2][10:13]) + dayToNum(lines[2][6:9]) + "_" + str('%02d'%int(minutes/60)) + str('%02d' % int(minutes-(minutes/60)*60)) + lines[2][23:25] + "_" + soubor
-    #              ^ rok             ^ cislo mesice                ^ cislo dnu v mesici            ^ hodina                      ^ minuta                                     ^sekunda                ^ puvodni jmeno
+    newname = "" + lines[2][30:34] + monthToNum(lines[2][10:13]) + lines[2][14:16] + "_" + str('%02d'%int(minutes/60)) + str('%02d' % int(minutes-(minutes/60)*60)) + lines[2][23:25] + "_" + soubor
+    #              ^ rok             ^ cislo mesice                ^ cislo dnu v mesici    ^ hodina                      ^ minuta                                     ^sekunda                ^ puvodni jmeno
     for i in range(18,3665):
         data = lines[i]
         arrA.append(float( data[:data.find("\t")] )*10)
         arrB.append(float( data[data.find("\t")+1:] ))
     arrA[0]=0
     arrB[0]=0
+    return newname
 
 def erse (arrA, arrB):
     #
