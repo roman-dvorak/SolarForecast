@@ -271,3 +271,89 @@ def smooth(inarr, lenght):
             suma=suma+inarr[i+xa]
         outarr[i]=suma/lenght
     return outarr
+
+
+def smerodatna_odchylka(data, min=0, max=0, plot=True):
+    #
+    #   pocita smerodatnou odchylku. Pokud min a max neni nastaveno, pocita se
+    #       z celeho pole. Jinak to je vyber mezi min a max
+    #
+    #   in 'data'   - pole s daty
+    #   in 'min'    - minimalni hodnota v poli pro posouzeni
+    #   in 'max'    - maximalni hodnota v poli pro posouzeni
+    #   in 'plot'   - rozhoduje o vykresleni grafu
+    #
+    #   out 'out'   - smerodatna odchylka
+    #
+    data = np.array(data)
+
+    if min == 0 and max == 0:
+        average = np.mean(data)
+        hist, bin_edges = np.histogram(data, 1+3.3*math.log(np.shape(data)[0]))
+        hist=np.append(hist,0)
+        average = np.mean(data)
+        modus = bin_edges[np.argmax(hist)]
+        median = np.median(data)
+        standardDeviation=math.sqrt((sum(x*x for x in data) - np.shape(data)[0]*average*average)/(np.shape(data)[0]-1))
+    else:
+        crop = np.array([])
+        for x in data:
+            if min < x < max:
+                crop=np.append(crop,x)
+                print np.shape(crop)[0]
+        hist, bin_edges = np.histogram(crop, 1+3.3*math.log(np.shape(crop)[0]))
+        hist=np.append(hist,0)
+        average = np.mean(crop)
+        modus = bin_edges[np.argmax(hist)]
+        median = np.median(crop)
+        standardDeviation=math.sqrt((sum(x*x for x in crop) - np.shape(crop)[0]*average*average)/(np.shape(crop)[0]-1))
+    if average > modus:
+        smer = True # tohle je pozitivni
+    else:
+        smer = False # tohle je negativni
+
+    if plot:
+        def pozitivita(bool):
+            if bool:
+                return "pozitivni"
+            else:
+                return "negativni"
+            
+        plt.figure()
+        plt.axvspan(float(min), float(max), alpha=0.2, color='g')
+        plt.axvline(x=median, linewidth=2, color='r')
+        plt.axvline(x=average, linewidth=2, color='g')
+        plt.axvline(x=modus, linewidth=2, color='b')
+        plt.hist(data, 1+3.3*math.log(np.shape(data)[0]), normed=1, facecolor='green', alpha=0.75)
+        plt.text(average, 5, "standartni odchylka - "+str(standardDeviation)+" - "+pozitivita(smer),
+                bbox={'facecolor':'green', 'alpha':0.75, 'pad':10})
+        plt.show(block=False)
+
+        print "hodnota standartni odchylky je: "+str(standardDeviation)+" a jeji smer je "+pozitivita(smer)
+
+    return standardDeviation, smer
+
+
+def plotMenu():
+    def hlavicka(msg=" "):
+        print msg
+        print "--------------------"
+        print "Menu"
+        print "____________________"
+        print " "
+        print "Ukoncit:", "\t\t\t" , "Enter"
+        print "smerodatna odchylka", "\t\t" , "1"+" + "+"Enter"
+        print ""
+    input=None
+    hlavicka()
+    while input != "" and input != "1" and input != "2" and input != "" and input != "":
+        input = raw_input("zadejte a potvrdte hodnotu: ")
+        if  input != "" and input != "1" and input != "2" and input != "" and input != "":
+            hlavicka("zadal jste spatnou hodnotu")
+        else:
+            print "zadal jste:", input
+        if  input == "":
+            plt.close()
+            raise SystemExit("Aplikace se ukoncuje")
+    return input
+
