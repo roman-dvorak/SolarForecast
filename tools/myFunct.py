@@ -1,25 +1,28 @@
 #!/usr/bin/python
 from __future__ import division
 import os
-import datetime
 import time
+import datetime
+from   datetime import datetime
+
 import ftplib
 import ConfigParser
-from   datetime import datetime
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 import operator
-from   scipy.interpolate import interp1d
 from   array import array
 import subprocess
 import Image
+import math
 
 from pylab import plot, ylim, xlim, show, xlabel, ylabel, grid
 from numpy import linspace, loadtxt, ones, convolve
-import numpy as numpy
+
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 import pyfits
+
+import numpy as np
+import numpy as numpy
 
 import sunpy
 from   sunpy import lightcurve
@@ -30,6 +33,7 @@ import pandas as pd
 import scipy
 import scipy as sp
 from scipy.interpolate import interp1d
+from scipy import stats
 
 
   
