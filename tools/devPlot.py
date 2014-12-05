@@ -23,8 +23,8 @@ f2min, f2max, jmeno2 = CaH
 jmeno3= jmeno+"/"+jmeno2
 
 
-souborrange = xrange(15000,len(dirList))
-#souborrange = xrange(1000,2000)
+souborrange = xrange(000,len(dirList))
+souborrange = xrange(2000,4000)
 
 
 RHESSI_labels = ['3 - 6 keV',            #   0
@@ -202,7 +202,7 @@ if f2:
     inter = 1+3.3*math.log(np.shape(n)[0])
 
     plt.figure()
-    plt.hist(n3, inter, normed=1, facecolor='green', alpha=0.75)
+    plt.hist(n3, inter, facecolor='green', alpha=0.75)
 
     plt.figure()
     plt.plot(n, n2,'.',linewidth=0.5, color='b', )
@@ -211,13 +211,20 @@ if f2:
 
     plotMenu()
     while True:
-        input = plotMenu()
-        if input == "1": # smerodatna odchylka
-            var1 = raw_input("zadejte min hodnotu hist: ")
-            print "you entered", var1
-            var2 = raw_input("zadejte max hodnotu hist: ")
-            print "you entered", var1
-            smerodatna_odchylka(n3, float(var1), float(var2))
+        try:
+            input = plotMenu()
+            if input == "1": # smerodatna odchylka
+                var1 = raw_input("zadejte min hodnotu hist: ")
+                print "you entered", var1
+                var2 = raw_input("zadejte max hodnotu hist: ")
+                print "you entered", var1
+                smerodatna_odchylka(n3, float(var1), float(var2))
+            if input == "2": # Hledani SJ
+                var1 = raw_input("zadejte cas hledaneho SJ [hh-mm-ss]: ")
+                print "you entered", var1
+                findSJ(var1, path_sj)
+        except Exception, e:
+            raise e
 
     #var1 = raw_input("zadejte min hodnotu hist: ")
     #print "you entered", var1

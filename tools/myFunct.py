@@ -12,11 +12,13 @@ from   array import array
 import subprocess
 import Image
 import math
+import statistics
 
 from pylab import plot, ylim, xlim, show, xlabel, ylabel, grid
 from numpy import linspace, loadtxt, ones, convolve
 
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import matplotlib as mpl
 
 import pyfits
@@ -294,7 +296,10 @@ def smerodatna_odchylka(data, min=0, max=0, plot=True):
         average = np.mean(data)
         modus = bin_edges[np.argmax(hist)]
         median = np.median(data)
-        standardDeviation=math.sqrt((sum(x*x for x in data) - np.shape(data)[0]*average*average)/(np.shape(data)[0]-1))
+        delta = data - average
+        for a in range(np.shape(data)):
+            print data[a], " - ", average[a], " = ", delta[a]
+        standardDeviation=math.sqrt((sum(delta)**2)/(np.shape(data)[0]-1))
     else:
         crop = np.array([])
         for x in data:
@@ -306,7 +311,12 @@ def smerodatna_odchylka(data, min=0, max=0, plot=True):
         average = np.mean(crop)
         modus = bin_edges[np.argmax(hist)]
         median = np.median(crop)
-        standardDeviation=math.sqrt((sum(x*x for x in crop) - np.shape(crop)[0]*average*average)/(np.shape(crop)[0]-1))
+        delta = crop - average
+        print "velikost je:", crop, "a", np.shape(crop)[0]
+        for a in range(np.shape(crop)[0]):
+            print data[a], " - ", average, " = ", delta[a], delta[a]**2
+        print np.sum(delta), np.shape(crop)[0]-1
+        standardDeviation=math.sqrt((sum(delta**2))/(np.shape(crop)[0]-1))
     if average > modus:
         smer = True # tohle je pozitivni
     else:
@@ -324,12 +334,12 @@ def smerodatna_odchylka(data, min=0, max=0, plot=True):
         plt.axvline(x=median, linewidth=2, color='r')
         plt.axvline(x=average, linewidth=2, color='g')
         plt.axvline(x=modus, linewidth=2, color='b')
-        plt.hist(data, 1+3.3*math.log(np.shape(data)[0]), normed=1, facecolor='green', alpha=0.75)
-        plt.text(average, 5, "standartni odchylka - "+str(standardDeviation)+" - "+pozitivita(smer),
+        plt.hist(data, 1+3.3*math.log(np.shape(data)[0]), facecolor='green', alpha=0.75)
+        plt.text(average, 5, "standartni odchylka: "+str( statistics.stdev(crop) )+" - "+pozitivita(smer),
                 bbox={'facecolor':'green', 'alpha':0.75, 'pad':10})
         plt.show(block=False)
 
-        print "hodnota standartni odchylky je: "+str(standardDeviation)+" a jeji smer je "+pozitivita(smer)
+        print "hodnota standartni odchylky je: "+str(standardDeviation)+" a jeji smer je "+pozitivita(smer)," nebo ", statistics.stdev(crop),statistics.variance(crop)
 
     return standardDeviation, smer
 
@@ -342,7 +352,8 @@ def plotMenu():
         print "____________________"
         print " "
         print "Ukoncit:", "\t\t\t" , "Enter"
-        print "smerodatna odchylka", "\t\t" , "1"+" + "+"Enter"
+        print "smerodatna odchylka", "\t\t" , "1" +" + "+"Enter"
+        print "Najit SJ", "\t\t" , "2+" " + "+"Enter"
         print ""
     input=None
     hlavicka()
@@ -356,4 +367,14 @@ def plotMenu():
             plt.close()
             raise SystemExit("Aplikace se ukoncuje")
     return input
+
+def findSJ(var1, path_sj):
+    #dt=datetime.strptime(var1,'%H-%M-%S')
+    if os.path.isfile(path_sj+var1+".bmp"):
+        img=mpimg.imread(path_sj+var1+".bmp")
+        imgplot = plt.imshow(img)
+        show(block=False)
+    else:
+        print "Nic nenalezeno"
+    #print(dt)
 
