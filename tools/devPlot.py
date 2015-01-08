@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from myFunct import *
 
 
@@ -24,7 +26,7 @@ jmeno3= jmeno+"/"+jmeno2
 
 
 souborrange = xrange(000,len(dirList))
-souborrange = xrange(2000,4000)
+#souborrange = xrange(2000,4000)
 
 
 RHESSI_labels = ['3 - 6 keV',            #   0
@@ -50,6 +52,7 @@ i=0
 hdulist = pyfits.open(path_hessi+'hsi_20140611_085140_005.fits', overwrite=True)
 tbdata = hdulist[2].data
 print len(tbdata)
+
 #for x in xrange(1,len(tbdata)):
 #    if i==25:
 #        i=0
@@ -190,6 +193,17 @@ lines = [p0, p1, p2, p3]
 plt.legend(lines, [l.get_label() for l in lines])
 
 
+
+client = hek.HEKClient()
+tstart = '2014/06/11 08:45:00'
+tend = '2014/06/11 09:10:00'
+event_type = 'FL'
+result = client.query(hek.attrs.Time(tstart,tend),hek.attrs.EventType(event_type))
+print "je zde ", len(result), " slunecnich erupci"
+#print result['event_peaktime']
+
+
+
 if f2:
     #plt.figure(10)
     #plt.plot(xarr, n2,linewidth=0.5, color='b', label=jmeno2)
@@ -214,11 +228,12 @@ if f2:
         try:
             input = plotMenu()
             if input == "1": # smerodatna odchylka
-                var1 = raw_input("zadejte min hodnotu hist: ")
+                var1 = float(raw_input("zadejte min hodnotu hist: "))
                 print "you entered", var1
-                var2 = raw_input("zadejte max hodnotu hist: ")
+                var2 = float(raw_input("zadejte max hodnotu hist: "))
                 print "you entered", var1
-                smerodatna_odchylka(n3, float(var1), float(var2))
+                std = smerodatna_odchylka(n3, float(var1), float(var2))
+
             if input == "2": # Hledani SJ
                 var1 = raw_input("zadejte cas hledaneho SJ [hh-mm-ss]: ")
                 print "you entered", var1

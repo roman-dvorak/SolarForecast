@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from __future__ import division
 import os
 import time
@@ -28,6 +30,7 @@ import numpy as numpy
 
 import sunpy
 from   sunpy import lightcurve
+from   sunpy.net import hek
 
 import pandas
 import pandas as pd
@@ -287,61 +290,54 @@ def smerodatna_odchylka(data, min=0, max=0, plot=True):
     #
     #   out 'out'   - smerodatna odchylka
     #
+
+
     data = np.array(data)
 
     if min == 0 and max == 0:
         average = np.mean(data)
-        hist, bin_edges = np.histogram(data, 1+3.3*math.log(np.shape(data)[0]))
-        hist=np.append(hist,0)
-        average = np.mean(data)
-        modus = bin_edges[np.argmax(hist)]
         median = np.median(data)
-        delta = data - average
-        for a in range(np.shape(data)):
-            print data[a], " - ", average[a], " = ", delta[a]
-        standardDeviation=math.sqrt((sum(delta)**2)/(np.shape(data)[0]-1))
+        standardDeviation=np.std(data)
+        kurtosis = stats.kurtosis(data)
+        skewness = stats.skew(data)
     else:
         crop = np.array([])
         for x in data:
             if min < x < max:
                 crop=np.append(crop,x)
-                print np.shape(crop)[0]
-        hist, bin_edges = np.histogram(crop, 1+3.3*math.log(np.shape(crop)[0]))
-        hist=np.append(hist,0)
         average = np.mean(crop)
-        modus = bin_edges[np.argmax(hist)]
+#        modus = stats.mode(crop)
+#        modus = statistics.mode(crop)         !!!!!
         median = np.median(crop)
-        delta = crop - average
-        print "velikost je:", crop, "a", np.shape(crop)[0]
-        for a in range(np.shape(crop)[0]):
-            print data[a], " - ", average, " = ", delta[a], delta[a]**2
-        print np.sum(delta), np.shape(crop)[0]-1
-        standardDeviation=math.sqrt((sum(delta**2))/(np.shape(crop)[0]-1))
-    if average > modus:
-        smer = True # tohle je pozitivni
-    else:
-        smer = False # tohle je negativni
+        standardDeviation=np.std(crop)
+        kurtosis = stats.kurtosis(crop)
+        skewness = stats.skew(crop)
 
     if plot:
-        def pozitivita(bool):
-            if bool:
-                return "pozitivni"
-            else:
-                return "negativni"
-            
+
         plt.figure()
-        plt.axvspan(float(min), float(max), alpha=0.2, color='g')
+        plt.axvspan(float(min), float(max), alpha=0.3, color='k')
+        plt.axvspan(average-standardDeviation, average+standardDeviation, alpha=0.4, color='b')
+        plt.axvspan(average+standardDeviation, average+standardDeviation+standardDeviation, alpha=0.4, color='r')
+        plt.axvspan(average-standardDeviation, average-standardDeviation-standardDeviation, alpha=0.4, color='r')
         plt.axvline(x=median, linewidth=2, color='r')
         plt.axvline(x=average, linewidth=2, color='g')
-        plt.axvline(x=modus, linewidth=2, color='b')
-        plt.hist(data, 1+3.3*math.log(np.shape(data)[0]), facecolor='green', alpha=0.75)
-        plt.text(average, 5, "standartni odchylka: "+str( statistics.stdev(crop) )+" - "+pozitivita(smer),
+        #plt.axvline(x=modus[0], linewidth=2, color='b')
+        plt.hist(data, 1.0+3.3*math.log(np.shape(data)[0]), facecolor='green', alpha=0.75)
+        plt.text(average, 10, "std: "+ str(standardDeviation),
                 bbox={'facecolor':'green', 'alpha':0.75, 'pad':10})
         plt.show(block=False)
 
-        print "hodnota standartni odchylky je: "+str(standardDeviation)+" a jeji smer je "+pozitivita(smer)," nebo ", statistics.stdev(crop),statistics.variance(crop)
 
-    return standardDeviation, smer
+    print "___________________________________________________________"
+    print "výběr hodnot od ", float(min), " po ", float(max)
+    print "průměr: ", average
+    print "median: ", median
+    print "smerodatn odchylka je: ", standardDeviation
+    print "spicatost: ", kurtosis
+    print "sikmost: ", skewness
+
+    return standardDeviation
 
 
 def plotMenu():
